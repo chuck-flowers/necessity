@@ -1,4 +1,4 @@
-import { ServiceContainer } from 'baster';
+import { ServiceContainer } from 'necessity';
 
 export const global = new ServiceContainer();
 

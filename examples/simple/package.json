@@ -11,7 +11,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"baster": "file:../.."
+		"necessity": "file:../.."
 	},
 	"devDependencies": {
 		"typescript": "^5.1.6"
