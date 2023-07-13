@@ -1,4 +1,4 @@
-import { global } from '../services';
+import { global } from '../services.js';
 
 export interface ILogger {
 	error(msg: string, ...extras: any[]): void;
@@ -7,7 +7,7 @@ export interface ILogger {
 	debug(msg: string, ...extras: any[]): void;
 }
 
-@global
+@global.register
 export default class Logger implements ILogger {
 	error(msg: string, ...extras: any[]) {
 		this.doLog('error', msg, ...extras)

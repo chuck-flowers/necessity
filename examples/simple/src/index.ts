@@ -1,8 +1,8 @@
-import Logger, { ILogger } from './services/Logger';
-import PersonRepo, { IPersonRepo } from './services/PersonRepo';
-import { getGlobalServices } from './services';
+import Logger, { ILogger } from './services/Logger.js';
+import PersonRepo, { IPersonRepo } from './services/PersonRepo.js';
+import { global } from './services.js';
 
-const container = getGlobalServices();
+const container = global;
 
 const logger: ILogger = container.get(Logger);
 const personRepo: IPersonRepo = container.get(PersonRepo);

@@ -1,6 +1,6 @@
-import Person from '../models/Person';
-import { global } from '../services';
-import { ILogger } from './Logger';
+import Person from '../models/Person.js';
+import { global } from '../services.js';
+import { ILogger } from './Logger.js';
 
 export interface IPersonRepo {
 	insert(p: Person): void;
@@ -8,7 +8,7 @@ export interface IPersonRepo {
 	deleteAll(): void;
 }
 
-@global
+@global.register
 export default class PersonRepo implements IPersonRepo {
 	private readonly people: Person[] = [];
 
@@ -20,7 +20,7 @@ export default class PersonRepo implements IPersonRepo {
 
 	insert(p: Person) {
 		this.logger.debug('insert', { p });
-		this.people.push();
+		this.people.push(p);
 	}
 
 	all(): Person[] {
@@ -33,3 +33,4 @@ export default class PersonRepo implements IPersonRepo {
 		while (this.people.pop());
 	}
 }
+

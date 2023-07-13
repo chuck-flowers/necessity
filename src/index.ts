@@ -2,15 +2,25 @@ import { ClassDec } from './models/decorators.js';
 import CtorParser from './services/CtorParser.js';
 
 export class ServiceContainer {
+	/** A mapping of a service name to its factory */
 	private readonly nameToFactory: Map<string, () => any> = new Map();
 
+	/** A mapping of a service name to the current instance */
 	private readonly nameToInstance: Map<string, any> = new Map();
 
+	/** A mapping of a service constructor to the service name */
 	private readonly ctorToName: Map<new (...args: any[]) => any, string> = new Map();
 
+	/** The object used to parse information from a constructor definition */
 	private ctorParser = new CtorParser();
 
 	constructor(private parent?: ServiceContainer) { }
+
+	/** Get a service by its name */
+	get<T>(name: string): T;
+
+	/** Geta  service by its constructor */
+	get<T>(ctor: new (...args: any[]) => T): T;
 
 	get<T>(nameOrCtor: string | (new (...args: any) => T)): T {
 		// Resolve the name if ctor was provided
@@ -37,14 +47,13 @@ export class ServiceContainer {
 		});
 	}
 
-	makeRegistrar(): ClassDec<any> {
-		return (value, context) => {
-			const serviceId = this.makeServiceId(context.name);
-			const dependencies = this.ctorParser.parseCtor(value);
+	readonly register: ClassDec<any> = (value, context) => {
+		const serviceId = this.makeServiceId(context.name);
+		const dependencies = this.ctorParser.parseCtor(value);
 
-			this.defineService(serviceId, value as unknown as (new (...args: any[]) => any), dependencies);
-		}
+		this.defineService(serviceId, value as unknown as (new (...args: any[]) => any), dependencies);
 	}
+
 
 	private makeServiceId(name: string) {
 		return name.charAt(0).toLowerCase() + name.slice(1);
