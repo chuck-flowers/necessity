@@ -1,4 +1,4 @@
-import { ClassDec } from './models/decorators.js';
+import { ClassDecContext, DecoratedClass } from './models/decorators.js';
 import CtorParser from './services/CtorParser.js';
 
 export class ServiceContainer {
@@ -47,7 +47,7 @@ export class ServiceContainer {
 		});
 	}
 
-	readonly register: ClassDec<any> = (value, context) => {
+	readonly register = <T>(value: DecoratedClass<T>, context: ClassDecContext) => {
 		const serviceId = this.makeServiceId(context.name);
 		const dependencies = this.ctorParser.parseCtor(value);
 
