@@ -35,6 +35,11 @@ export class ServiceContainer {
 
 	}
 
+	/** Provide an instantiated instance of a service */
+	set<T>(name: string, service: T): void {
+		this.nameToInstance.set(name, service);
+	}
+
 	defineService<T>(name: string, ctor: new (...args: any[]) => T, dependencies: string[]): void {
 		this.ctorToName.set(ctor, name);
 		this.nameToFactory.set(name, (): T => {
