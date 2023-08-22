@@ -47,10 +47,11 @@ export class ServiceContainer implements IServiceContainer {
 		this.instanceLookup.set(name, service);
 	}
 
-	defineService<T>(ctor: new (...args: any[]) => T, dependencies: string[]): void {
+	defineService<T>(ctor: new (...args: any[]) => T): void {
 		const name = this.makeServiceId(ctor.name);
 		this.defineFactory((): T => {
 			const args: any[] = [];
+			const dependencies = this.ctorParser.parseCtor(ctor);
 			for (const dep of dependencies) {
 				args.push(this.getService(dep));
 			}
@@ -84,8 +85,7 @@ export class ServiceContainer implements IServiceContainer {
 	}
 
 	readonly register = <T>(value: DecoratedClass<T>) => {
-		const dependencies = this.ctorParser.parseCtor(value);
-		this.defineService(value as unknown as (new (...args: any[]) => any), dependencies);
+		this.defineService(value as unknown as (new (...args: any[]) => any));
 	}
 
 	private makeServiceId(name: string) {
