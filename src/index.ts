@@ -38,9 +38,10 @@ export class ServiceContainer implements IServiceContainer {
 				throw new Error(`The service '${nameOrCtor.name}' has not been defined`);
 			}
 
-			return this.getService(name);
+			nameOrCtor = name;
 		}
 
+		return this.getService(nameOrCtor);
 	}
 
 	set<T>(name: string | (new (...args: any[]) => T), service: T): void {
