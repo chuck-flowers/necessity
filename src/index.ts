@@ -23,7 +23,7 @@ export class ServiceContainer implements IServiceContainer {
 	private readonly factoryLookup: Map<string, () => any> = new Map();
 
 	/** A mapping of a service name to the current instance */
-	private readonly instanceLookup: Map<string | (new (...args: any[]) => any), any> = new Map();
+	private readonly instanceLookup: Map<string, any> = new Map();
 
 	/** The object used to parse information from a constructor definition */
 	private ctorParser = new CtorParser();
@@ -44,6 +44,10 @@ export class ServiceContainer implements IServiceContainer {
 	}
 
 	set<T>(name: string | (new (...args: any[]) => T), service: T): void {
+		if (typeof name !== 'string') {
+			name = this.makeServiceId(name.name);
+		}
+
 		this.instanceLookup.set(name, service);
 	}
 
