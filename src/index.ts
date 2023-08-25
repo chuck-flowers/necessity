@@ -1,5 +1,6 @@
 import { ClassDecContext, DecoratedClass } from './models/decorators.js';
-import CtorParser from './services/CtorParser.js';
+import { parseConstructorArgs } from './utils/constructor-parsing.js';
+import { parseFunctionArgs } from './utils/function-parsing.js';
 
 export interface IServiceContainer {
 	/** Get the instance of a service by the service name */
@@ -13,7 +14,7 @@ export interface IServiceContainer {
 	/** Define a class which */
 	defineService<T>(ctor: new (...args: any[]) => T, depedencies: string[]): void;
 	/** Define a function which produces an instance of a service */
-	defineFactory<T>(factory: () => T, name?: string): void;
+	defineFactory<T>(factory: (...args: any[]) => T, name?: string): void;
 	/** Define a way of creating a new instance of a service from an existing instance in a parent container */
 	refineFactory<T>(ctor: new (...args: any[]) => T, refiner: (input: T) => T): void;
 }
@@ -24,9 +25,6 @@ export class ServiceContainer implements IServiceContainer {
 
 	/** A mapping of a service name to the current instance */
 	private readonly instanceLookup: Map<string, any> = new Map();
-
-	/** The object used to parse information from a constructor definition */
-	private ctorParser = new CtorParser();
 
 	constructor(private parent?: ServiceContainer) { }
 
@@ -54,9 +52,9 @@ export class ServiceContainer implements IServiceContainer {
 
 	defineService<T>(ctor: new (...args: any[]) => T): void {
 		const name = this.makeServiceId(ctor.name);
+		const dependencies = parseConstructorArgs(ctor);
 		this.defineFactory((): T => {
 			const args: any[] = [];
-			const dependencies = this.ctorParser.parseCtor(ctor);
 			for (const dep of dependencies) {
 				args.push(this.getService(dep));
 			}
@@ -65,7 +63,7 @@ export class ServiceContainer implements IServiceContainer {
 		}, name);
 	}
 
-	defineFactory<T>(factory: () => T, name?: string) {
+	defineFactory<T>(factory: (...args: any[]) => T, name?: string) {
 		if (name === undefined) {
 			name = this.makeServiceId(factory.name);
 			if (name === '') {
@@ -73,7 +71,16 @@ export class ServiceContainer implements IServiceContainer {
 			}
 		}
 
-		this.factoryLookup.set(name, factory);
+		const dependencies = parseFunctionArgs(factory);
+
+		this.factoryLookup.set(name, (): T => {
+			const args: any[] = [];
+			for (const dep of dependencies) {
+				args.push(this.getService(dep));
+			}
+
+			return factory(...args);
+		});
 	}
 
 	refineFactory<T>(ctor: new (...args: any[]) => T, refiner: (input: T) => T) {

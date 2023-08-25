@@ -1,12 +1,10 @@
 import { it, expect } from 'vitest';
-import CtorParser from '../../../src/services/CtorParser';
-
-const service = new CtorParser();
+import { parseConstructorArgs } from '../../../src/utils/constructor-parsing';
 
 it('parses no constructor', () => {
 	class Foo { }
 
-	const deps = service.parseCtor(Foo);
+	const deps = parseConstructorArgs(Foo);
 
 	expect(deps).toStrictEqual([]);
 });
@@ -16,7 +14,7 @@ it('parses empty constructor', () => {
 		constructor() { }
 	}
 
-	const deps = service.parseCtor(Foo);
+	const deps = parseConstructorArgs(Foo);
 
 	expect(deps).toStrictEqual([]);
 });
@@ -28,7 +26,7 @@ it('parses single param', () => {
 		}
 	}
 
-	const deps = service.parseCtor(Foo);
+	const deps = parseConstructorArgs(Foo);
 
 	expect(deps).toStrictEqual(['foo']);
 });
@@ -41,7 +39,7 @@ it('parses two params', () => {
 		}
 	}
 
-	const deps = service.parseCtor(Foo);
+	const deps = parseConstructorArgs(Foo);
 
 	expect(deps).toStrictEqual(['foo', 'bar']);
 });
@@ -54,7 +52,7 @@ it('parses three params', () => {
 		}
 	}
 
-	const deps = service.parseCtor(Foo);
+	const deps = parseConstructorArgs(Foo);
 
 	expect(deps).toStrictEqual(['foo', 'bar', 'baz']);
 })
