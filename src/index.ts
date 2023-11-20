@@ -35,7 +35,7 @@ export class ServiceContainer implements IServiceContainer {
 	private readonly promiseLookup: Map<string, Promise<unknown>> = new Map();
 
 	/** A mapping of a service name to its factory */
-	private readonly factoryLookup: Map<string, () => (unknown | Promise<unknown>)> = new Map();
+	private readonly factoryLookup: Map<string, () => Promise<unknown>> = new Map();
 
 	constructor(private parent?: ServiceContainer) { }
 
@@ -65,10 +65,10 @@ export class ServiceContainer implements IServiceContainer {
 	defineService<T>(ctor: Service<T>): this {
 		const name = this.makeServiceId(ctor.name);
 		const dependencies = parseConstructorArgs(ctor);
-		return this.defineFactory<T>(name, (): T => {
+		return this.defineFactory<T>(name, async (): Promise<T> => {
 			const args: any[] = [];
 			for (const dep of dependencies) {
-				args.push(this.getService(dep));
+				args.push(await this.getService(dep));
 			}
 
 			return new ctor(...args);
@@ -186,7 +186,7 @@ export class ServiceContainer implements IServiceContainer {
 			const builtInstance = await factoryResult;
 			this.promiseLookup.delete(name);
 			this.instanceLookup.set(name, builtInstance);
-			return builtInstance;
+			return builtInstance as T;
 		} else {
 			this.instanceLookup.set(name, factoryResult);
 			return Promise.resolve(factoryResult as T);
