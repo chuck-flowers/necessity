@@ -1,15 +1,48 @@
-const FUNCTION_REGEX = /(function)?\s*\(([^\)]*)\)/;
+/** A function with the format "function () {}" */
+const ANON_FUNCTION = /function\s*\(([^)]*)\)/;
 
-export function parseFunctionArgs<T>(input: (...args: any[]) => T): string[] {
+/** A function with the format "function name() {}" */
+const NAMED_FUNCTION = /function\s+([^\s(]+)\s*\(([^)]*)\)/
+
+/** A function with the format "() => {}" */
+const PAREN_ARROW = /\(([^)]*)\)\s*=>/
+
+/** A function with the format "arg => {}" */
+const SINGLE_ARG_ARROW = /([^\s]+)\s*=>/;
+
+export function parseFunctionArgs<T>(input: (...args: unknown[]) => T): string[] {
 	const funcStr = input.toString();
-	const match = FUNCTION_REGEX.exec(funcStr);
-	if (match === null) {
-		return [];
+
+	const anonFunctionResult = ANON_FUNCTION.exec(funcStr);
+	if (anonFunctionResult !== null) {
+		const params = anonFunctionResult[1];
+		return parseParamString(params);
 	}
 
-	const [_, _keyword, params] = match;
+	const nameFunctionResult = NAMED_FUNCTION.exec(funcStr);
+	if (nameFunctionResult !== null) {
+		const params = nameFunctionResult[2];
+		return parseParamString(params);
+	}
 
-	const toReturn: string[] = [];
+	const parenArrowResult = PAREN_ARROW.exec(funcStr);
+	if (parenArrowResult !== null) {
+		const params = parenArrowResult[1];
+		return parseParamString(params);
+	}
+
+	const singleArgResult = SINGLE_ARG_ARROW.exec(funcStr);
+	if (singleArgResult !== null) {
+		const params = singleArgResult[1];
+		return parseParamString(params);
+	}
+
+	return [];
+}
+
+function parseParamString(params: string): string[] {
+	const toReturn = [];
+
 	for (const p of params.split(',')) {
 		if (p !== '') {
 			toReturn.push(p.trim());
