@@ -20,11 +20,13 @@ export interface IServiceContainer {
 	refineService<T>(ctor: Service<T>, refiner: Refiner<T>): IServiceContainer;
 }
 
-type Factory<T> = (...args: unknown[]) => T | Promise<T>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Factory<T> = (...args: any[]) => T | Promise<T>;
 
 type Refiner<T> = (input: T) => T | Promise<T>;
 
-type Service<T> = new (...args: unknown[]) => T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Service<T> = new (...args: any[]) => T;
 
 export class ServiceContainer implements IServiceContainer {
 
