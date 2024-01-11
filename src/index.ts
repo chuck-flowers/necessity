@@ -20,11 +20,11 @@ export interface IServiceContainer {
 	refineService<T>(ctor: Service<T>, refiner: Refiner<T>): IServiceContainer;
 }
 
-type Factory<T> = (...args: any[]) => T | Promise<T>;
+type Factory<T> = (...args: unknown[]) => T | Promise<T>;
 
 type Refiner<T> = (input: T) => T | Promise<T>;
 
-type Service<T> = new (...args: any[]) => T;
+type Service<T> = new (...args: unknown[]) => T;
 
 export class ServiceContainer implements IServiceContainer {
 
@@ -66,7 +66,7 @@ export class ServiceContainer implements IServiceContainer {
 		const name = this.makeServiceId(ctor.name);
 		const dependencies = parseConstructorArgs(ctor);
 		return this.defineFactory<T>(name, async (): Promise<T> => {
-			const args: any[] = [];
+			const args: unknown[] = [];
 			for (const dep of dependencies) {
 				args.push(await this.getService(dep));
 			}
@@ -99,7 +99,7 @@ export class ServiceContainer implements IServiceContainer {
 
 		this.factoryLookup.set(name, async (): Promise<T> => {
 			// Determine the dependencies of the 
-			const args: any[] = [];
+			const args: unknown[] = [];
 			for (const dep of dependencies) {
 				args.push(await this.getService(dep));
 			}
@@ -164,7 +164,7 @@ export class ServiceContainer implements IServiceContainer {
 		}
 
 		// Check for a pending initialization
-		let promise = this.promiseLookup.get(name);
+		const promise = this.promiseLookup.get(name);
 		if (promise !== undefined) {
 			return promise as Promise<T>;
 		}
