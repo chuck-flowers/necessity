@@ -1,12 +1,13 @@
-import { it, expect } from 'vitest';
-import { parseConstructorArgs } from '../../../src/utils/constructor-parsing';
+import assert from 'node:assert';
+import { it } from 'node:test';
+import { parseConstructorArgs } from '../../../src/utils/constructor-parsing.js';
 
 it('parses no constructor', () => {
 	class Foo { }
 
 	const deps = parseConstructorArgs(Foo);
 
-	expect(deps).toStrictEqual([]);
+	assert.deepStrictEqual(deps, []);
 });
 
 it('parses empty constructor', () => {
@@ -16,43 +17,43 @@ it('parses empty constructor', () => {
 
 	const deps = parseConstructorArgs(Foo);
 
-	expect(deps).toStrictEqual([]);
+	assert.deepStrictEqual(deps, []);
 });
 
 it('parses single param', () => {
 	class Foo {
-		constructor(foo: number) {
+		constructor(public foo: number) {
 
 		}
 	}
 
 	const deps = parseConstructorArgs(Foo);
 
-	expect(deps).toStrictEqual(['foo']);
+	assert.deepStrictEqual(deps, ['foo']);
 });
 
 it('parses two params', () => {
 
 	class Foo {
-		constructor(foo: number, bar: string) {
+		constructor(public foo: number, public bar: string) {
 
 		}
 	}
 
 	const deps = parseConstructorArgs(Foo);
 
-	expect(deps).toStrictEqual(['foo', 'bar']);
+	assert.deepStrictEqual(deps, ['foo', 'bar']);
 });
 
 it('parses three params', () => {
 
 	class Foo {
-		constructor(foo: number, bar: string, baz: boolean) {
+		constructor(public foo: number, public bar: string, public baz: boolean) {
 
 		}
 	}
 
 	const deps = parseConstructorArgs(Foo);
 
-	expect(deps).toStrictEqual(['foo', 'bar', 'baz']);
+	assert.deepStrictEqual(deps, ['foo', 'bar', 'baz']);
 })
