@@ -4,22 +4,35 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-devDependencies:
-  '@tsconfig/node18':
-    specifier: ^18.2.2
-    version: 18.2.2
-  '@typescript-eslint/eslint-plugin':
-    specifier: ^6.18.1
-    version: 6.18.1(@typescript-eslint/parser@6.18.1)(eslint@8.56.0)(typescript@5.2.2)
-  eslint:
-    specifier: ^8.56.0
-    version: 8.56.0
-  tsx:
-    specifier: ^4.7.0
-    version: 4.7.0
-  typescript:
-    specifier: ^5.1.6
-    version: 5.2.2
+importers:
+
+  .:
+    devDependencies:
+      '@tsconfig/node18':
+        specifier: ^18.2.2
+        version: 18.2.2
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.18.1
+        version: 6.18.1(@typescript-eslint/parser@6.18.1)(eslint@8.56.0)(typescript@5.2.2)
+      eslint:
+        specifier: ^8.56.0
+        version: 8.56.0
+      tsx:
+        specifier: ^4.7.0
+        version: 4.7.0
+      typescript:
+        specifier: ^5.1.6
+        version: 5.2.2
+
+  examples/simple:
+    dependencies:
+      necessity:
+        specifier: file:../..
+        version: 'file:'
+    devDependencies:
+      typescript:
+        specifier: ^5.1.6
+        version: 5.2.2
 
 packages:
 
@@ -1224,3 +1237,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  'file:':
+    resolution: {directory: '', type: directory}
+    name: necessity
+    dev: false
