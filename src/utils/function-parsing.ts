@@ -10,7 +10,8 @@ const PAREN_ARROW = /\(([^)]*)\)\s*=>/
 /** A function with the format "arg => {}" */
 const SINGLE_ARG_ARROW = /([^\s]+)\s*=>/;
 
-export function parseFunctionArgs<T>(input: (...args: unknown[]) => T): string[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseFunctionArgs<T>(input: (...args: any[]) => T): string[] {
 	const funcStr = input.toString();
 
 	const anonFunctionResult = ANON_FUNCTION.exec(funcStr);

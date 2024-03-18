@@ -1,6 +1,7 @@
 const CTOR_REGEX = /constructor\(([^)]*)\)/
 
-export function parseConstructorArgs<T>(input: new (...args: unknown[]) => T): string[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseConstructorArgs<T>(input: new (...args: any[]) => T): string[] {
 	const classStr = input.toString();
 	const match = CTOR_REGEX.exec(classStr);
 	if (match === null) {

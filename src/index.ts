@@ -1,5 +1,6 @@
 import { parseConstructorArgs } from './utils/constructor-parsing.js';
 import { parseFunctionArgs } from './utils/function-parsing.js';
+import DependencyGraph from './utils/DependencyGraph.js';
 
 export interface IServiceContainer {
 	/** Get the instance of a service by the service name */
@@ -11,22 +12,32 @@ export interface IServiceContainer {
 	/** Set the instance for a service identified by the constructor */
 	set<T>(ctor: Service<T>, service: T): IServiceContainer;
 	/** Define a class which */
-	defineService<T>(ctor: Service<T>): IServiceContainer;
+	defineService<T>(ctor: Service<T>, options?: ServiceOptions<T>): IServiceContainer;
 	/** Define a function which produces an instance of a service */
-	defineFactory<T>(name: string, factory: Factory<T>): IServiceContainer;
-	/** Define a named function which produces an instance of a service */
-	defineFactory<T>(factory: Factory<T>): IServiceContainer;
+	defineFactory<T>(name: string, factory: Factory<T>, options?: FactoryOptions<T>): IServiceContainer;
 	/** Define a way of creating a new instance of a service from an existing instance in a parent container */
 	refineService<T>(ctor: Service<T>, refiner: Refiner<T>): IServiceContainer;
+	/** Cleanup all service instances */
+	close(): Promise<void>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Factory<T> = (...args: any[]) => T | Promise<T>;
 
+type Destructor<T> = (instance: T) => void | Promise<void>;
+
+type FactoryOptions<T> = {
+	destructor?: Destructor<T>,
+}
+
 type Refiner<T> = (input: T) => T | Promise<T>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Service<T> = new (...args: any[]) => T;
+
+type ServiceOptions<T> = {
+	destructor?: Destructor<T>,
+}
 
 export class ServiceContainer implements IServiceContainer {
 
@@ -38,6 +49,12 @@ export class ServiceContainer implements IServiceContainer {
 
 	/** A mapping of a service name to its factory */
 	private readonly factoryLookup: Map<string, () => Promise<unknown>> = new Map();
+
+	/** A mapping of a service name to its destructor */
+	private readonly destructorLookup: Map<string, Destructor<unknown>> = new Map();
+
+	/** Tracks the dependency relationships between services */
+	private readonly dependencyGraph = new DependencyGraph();
 
 	constructor(private parent?: ServiceContainer) { }
 
@@ -64,9 +81,13 @@ export class ServiceContainer implements IServiceContainer {
 		return this;
 	}
 
-	defineService<T>(ctor: Service<T>): this {
+	defineService<T>(ctor: Service<T>, options?: ServiceOptions<T>): this {
 		const name = this.makeServiceId(ctor.name);
 		const dependencies = parseConstructorArgs(ctor);
+		for (const dep of dependencies) {
+			this.dependencyGraph.defineDep(name, dep);
+		}
+
 		return this.defineFactory<T>(name, async (): Promise<T> => {
 			const args: unknown[] = [];
 			for (const dep of dependencies) {
@@ -74,30 +95,16 @@ export class ServiceContainer implements IServiceContainer {
 			}
 
 			return new ctor(...args);
+		}, {
+			destructor: options?.destructor
 		});
 	}
 
-	defineFactory<T>(name: string, factory: Factory<T>): this;
-	defineFactory<T>(factory: Factory<T>): this;
-	defineFactory<T>(nameOrFactory: Factory<T> | string, optionalFactory?: Factory<T>): this {
-		let name: string;
-		let factory: Factory<T>;
-		if (typeof nameOrFactory === 'function') {
-			name = nameOrFactory.name;
-			factory = optionalFactory!;
-		} else {
-			name = nameOrFactory;
-			factory = optionalFactory!;
-		}
-
-		if (name === undefined) {
-			name = this.makeServiceId(factory.name);
-			if (name === '') {
-				throw new Error('Unable to determine the name of the factory: ' + factory.toString());
-			}
-		}
-
+	defineFactory<T>(name: string, factory: Factory<T>, options?: FactoryOptions<T>): this {
 		const dependencies = parseFunctionArgs(factory);
+		for (const dep of dependencies) {
+			this.dependencyGraph.defineDep(name, dep);
+		}
 
 		this.factoryLookup.set(name, async (): Promise<T> => {
 			// Determine the dependencies of the 
@@ -113,6 +120,10 @@ export class ServiceContainer implements IServiceContainer {
 				return Promise.resolve(instance);
 			}
 		});
+
+		if (options && options.destructor) {
+			this.destructorLookup.set(name, options.destructor as Destructor<unknown>);
+		}
 
 		return this;
 	}
@@ -192,6 +203,30 @@ export class ServiceContainer implements IServiceContainer {
 		} else {
 			this.instanceLookup.set(name, factoryResult);
 			return Promise.resolve(factoryResult as T);
+		}
+	}
+
+	async close() {
+		// Create an inverted dependency graph so the shutdown can happen in the opposite order
+		const shutdownGraph = this.dependencyGraph.invert();
+
+		// Ensure that all pending services have resolved
+		await Promise.all(this.promiseLookup.values());
+
+		// Run all defined destructors on all instantiated services
+		for (const name of shutdownGraph.topologicalSort()) {
+			const dtor = this.destructorLookup.get(name);
+			if (!dtor) {
+				continue;
+			}
+
+			const instance = this.instanceLookup.get(name);
+			if (instance !== undefined) {
+				const result = dtor(instance);
+				if (result instanceof Promise) {
+					await result;
+				}
+			}
 		}
 	}
 }

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "example-destructors",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "compile": "tsc",
+    "start": "tsx src/index.ts"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "necessity": "workspace:^"
+  }
+}
