@@ -26,7 +26,7 @@ export default class DependencyGraph {
 	*topologicalSort(): Iterable<string> {
 		const set = new Set<string>();
 		for (const x of this.mapping.keys()) {
-			for (const y of this.topo(x)) {
+			for (const y of this.getTransitiveDependencies(x)) {
 				if (!set.has(y)) {
 					set.add(y);
 					yield y;
@@ -35,11 +35,11 @@ export default class DependencyGraph {
 		}
 	}
 
-	private *topo(input: string): Iterable<string> {
+	*getTransitiveDependencies(input: string): Iterable<string> {
 		const values = this.mapping.get(input);
 		if (values !== undefined && values.length > 0) {
 			for (const v of values) {
-				yield* this.topo(v);
+				yield* this.getTransitiveDependencies(v);
 			}
 		}
 

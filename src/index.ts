@@ -17,6 +17,8 @@ export interface IServiceContainer {
 	defineFactory<T>(name: string, factory: Factory<T>, options?: FactoryOptions<T>): IServiceContainer;
 	/** Define a way of creating a new instance of a service from an existing instance in a parent container */
 	refineService<T>(ctor: Service<T>, refiner: Refiner<T>): IServiceContainer;
+	/** Ensure that a given service is constructable */
+	test(service: string): boolean;
 	/** Cleanup all service instances */
 	close(): Promise<void>;
 }
@@ -162,6 +164,16 @@ export class ServiceContainer implements IServiceContainer {
 				return Promise.resolve(refined);
 			}
 		});
+	}
+
+	test(service: string): boolean {
+		for (const x of this.dependencyGraph.getTransitiveDependencies(service)) {
+			if (!this.factoryLookup.has(x)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private makeServiceId(name: string) {
