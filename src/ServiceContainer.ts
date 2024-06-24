@@ -5,25 +5,22 @@ import { parseFunctionArgs } from "./utils/function-parsing.js";
 export class ServiceContainer<
 	Mapping extends ServiceMapping,
 > {
-	static new<
-		const M extends ServiceMapping
-	>(mapping: { [K in keyof M]: ServiceDefinition<M[K]> }): ServiceContainer<M> {
-		const toReturn = new ServiceContainer<M>();
-
-		for (const [key, value] of Object.entries(mapping)) {
-			const serviceOptions = toReturn.normalizeServiceDef(value as ServiceDefinition<M[keyof M]>);
-			const factory = toReturn.compileFactory(key, serviceOptions);
-			toReturn.factoryLookup[key as keyof M] = factory as () => Promise<M[keyof M]>;
-		}
-
-		return toReturn;
-	}
-
 	private readonly depGraph = new DependencyGraph();
 	private readonly factoryLookup = {} as FactoryLookup<Mapping>;
 	private readonly instanceLookup = {} as Partial<Mapping>;
 
-	private constructor() { }
+	constructor(
+		mapping: ContainerDefinition<Mapping>,
+		private readonly parent?: ServiceContainer<Record<string, unknown>>
+	) {
+		type Key = keyof Mapping;
+
+		for (const [key, value] of Object.entries(mapping)) {
+			const serviceOptions = this.normalizeServiceDef(value as ServiceDefinition<Mapping[Key]>);
+			const factory = this.compileFactory(key, serviceOptions);
+			this.factoryLookup[key as Key] = factory as () => Promise<Mapping[Key]>;
+		}
+	}
 
 	async get<K extends keyof Mapping>(key: K): Promise<Mapping[K]> {
 		// Check for existing instance
@@ -31,11 +28,27 @@ export class ServiceContainer<
 			return this.instanceLookup[key] as Mapping[K];
 		}
 
-		// Construct instance
-		const factory = this.factoryLookup[key] as () => Mapping[K];
+		// If there's no factory defined, defer to the parent container where available
+		const factory = this.factoryLookup[key] as (() => Mapping[K]) | undefined;
+		if (factory === undefined) {
+			if (this.parent !== undefined) {
+				return this.parent.get(key as string) as Mapping[K];
+			} else {
+				throw new Error(`No definition for the service "${String(key)}" was found`)
+			}
+		}
+
+		// Construct the instance and save it to the map
 		const instance = factory();
 		this.instanceLookup[key] = instance;
 		return instance;
+	}
+
+	child<M extends ServiceMapping>(mapping: ContainerDefinition<M>): ServiceContainer<Mapping & M> {
+		return new ServiceContainer<Mapping & M>(
+			mapping as ContainerDefinition<M & Mapping>,
+			this
+		);
 	}
 
 	private normalizeServiceDef<T>(def: ServiceDefinition<T>): ServiceOptions<T> {
@@ -105,6 +118,10 @@ type ServiceKey = string;
 
 type ServiceMapping = {
 	[x: string]: unknown
+}
+
+type ContainerDefinition<M extends ServiceMapping> = {
+	[K in keyof M]: ServiceDefinition<M[K]>
 }
 
 type ServiceDefinition<T> =
