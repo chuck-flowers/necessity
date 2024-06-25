@@ -7,6 +7,7 @@ export class ServiceContainer<
 > {
 	private readonly depGraph = new DependencyGraph();
 	private readonly factoryLookup = {} as FactoryLookup<Mapping>;
+	private readonly dtorLookup = {} as DtorLookup<Mapping>;
 	private readonly instanceLookup = {} as Partial<Mapping>;
 
 	constructor(
@@ -55,8 +56,32 @@ export class ServiceContainer<
 	child<M extends ServiceMapping>(mapping: ContainerDefinition<M>): ServiceContainer<Mapping & M> {
 		return new ServiceContainer<Mapping & M>(
 			mapping as ContainerDefinition<M & Mapping>,
-			this
+			this as ServiceContainer<Record<string, unknown>>
 		);
+	}
+
+	async close(): Promise<void> {
+		// Create an inverted dependency graph so the shutdown can happen in the opposite order
+		const shutdownGraph = this.depGraph.invert();
+
+		// Ensure that all pending services have resolved
+		await Promise.all(Object.values(this.instanceLookup).filter(x => x instanceof Promise));
+
+		// Run all defined destructors on all instantiated services
+		for (const name of shutdownGraph.topologicalSort()) {
+			const dtor = this.dtorLookup[name];
+			if (!dtor) {
+				continue;
+			}
+
+			const instance = this.instanceLookup[name];
+			if (instance !== undefined) {
+				const result = dtor(instance);
+				if (result instanceof Promise) {
+					await result;
+				}
+			}
+		}
 	}
 
 	private normalizeServiceDef<T>(def: ServiceDefinition<T>): ServiceOptions<T> {
@@ -144,10 +169,15 @@ type ServiceFactory<T> = (...args: any[]) => T;
 type ServiceConstructor<T> = new (...args: any[]) => T;
 
 type ServiceOptions<T> = {
-	service: ServiceFactory<T> | ServiceConstructor<T>
+	service: ServiceFactory<T> | ServiceConstructor<T>,
+	dtor?: (instance: T) => void | Promise<void>,
 }
 
 type FactoryLookup<M extends ServiceMapping> = {
 	[K in keyof M]: () => M[K] | Promise<M[K]>
 }
+
+type DtorLookup<M extends ServiceMapping> = {
+	[K in keyof M]?: (x: M[K]) => void | Promise<void>
+};
 
