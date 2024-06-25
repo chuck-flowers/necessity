@@ -101,11 +101,9 @@ export class ServiceContainer<
 		if (stringDef.startsWith('class')) {
 			type = 'class';
 			deps = parseConstructorArgs(options.service as ServiceConstructor<T>);
-		} else if (stringDef.startsWith('function') || stringDef.startsWith('(')) {
+		} else {
 			type = 'function';
 			deps = parseFunctionArgs(options.service as ServiceFactory<T>);
-		} else {
-			throw new Error(`Unable to determine init type of ${serviceKey}: ${stringDef}`);
 		}
 
 		// Parse deps
