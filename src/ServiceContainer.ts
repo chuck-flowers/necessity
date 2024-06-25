@@ -120,7 +120,6 @@ export class ServiceContainer<
 				}
 
 				const subFactory = this.factoryLookup[x as keyof Mapping] as () => Mapping[keyof Mapping];
-				console.log('subFactory ' + x + ' is of type ' + typeof subFactory);
 				const instance = subFactory();
 				this.instanceLookup[x as keyof Mapping] = instance;
 
