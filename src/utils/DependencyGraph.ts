@@ -23,6 +23,19 @@ export default class DependencyGraph {
 		return toReturn;
 	}
 
+	allServices(): Set<string> {
+		const set = new Set<string>();
+
+		for (const [key, values] of this.mapping.entries()) {
+			set.add(key);
+			for (const v of values) {
+				set.add(v);
+			}
+		}
+
+		return set;
+	}
+
 	*topologicalSort(): Iterable<string> {
 		const set = new Set<string>();
 		for (const x of this.mapping.keys()) {

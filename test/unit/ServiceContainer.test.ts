@@ -39,33 +39,50 @@ class Repo {
 	}
 }
 
-await test('no dependencies', async () => {
-	const container = createServiceContainer();
+await test.describe('Get Tests', async () => {
+	await test('no dependencies', async () => {
+		const container = createServiceContainer();
 
-	const logger = await container.get('logger');
-	assert(logger);
-	assert('log' in logger);
+		const logger = await container.get('logger');
+		assert(logger);
+		assert('log' in logger);
+	});
+
+	await test('single dependency', async () => {
+		const container = createServiceContainer();
+
+		const repo = await container.get('repo');
+		const logger = await container.get('logger');
+		repo.insert('Key', 'Value');
+		assert(logger.log.mock.callCount() > 0);
+	});
+
+	await test('parent container', async () => {
+		const parent = createServiceContainer();
+		const child = createChildContainer(parent);
+
+		const console = child.get('consoleLogger');
+		const logger = child.get('logger');
+
+		assert(console);
+		assert(logger);
+	});
+
 });
 
-await test('single dependency', async () => {
-	const container = createServiceContainer();
+await test.describe('Check Tests', async () => {
+	await test('simple success', () => {
+		const service = createServiceContainer();
+		assert(service.check());
+	});
 
-	const repo = await container.get('repo');
-	const logger = await container.get('logger');
-	repo.insert('Key', 'Value');
-	assert(logger.log.mock.callCount() > 0);
-});
+	await test('missing dependency', () => {
+		const services = createServiceContainer()
+			.defineService('timeFormatter', (timeService: Date) => new Intl.DateTimeFormat().format(timeService))
+		assert(!services.check());
+	})
+})
 
-await test('parent container', async () => {
-	const parent = createServiceContainer();
-	const child = createChildContainer(parent);
-
-	const console = child.get('consoleLogger');
-	const logger = child.get('logger');
-
-	assert(console);
-	assert(logger);
-});
 
 function createServiceContainer() {
 	return new ServiceContainer({

@@ -31,6 +31,19 @@ export class ServiceContainer<
 		return this as ServiceContainer<Mapping & { [T in K]: S }>;
 	}
 
+	check(): boolean {
+		const services = this.depGraph.allServices();
+		for (const s of services) {
+			if (s in this.factoryLookup) {
+				continue;
+			}
+
+			return false;
+		}
+
+		return this.parent?.check() ?? true;
+	}
+
 	async get<K extends keyof Mapping>(key: K): Promise<Mapping[K]> {
 		// Check for existing instance
 		if (key in this.instanceLookup) {
