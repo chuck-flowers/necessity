@@ -95,7 +95,6 @@ export class ServiceContainer<
 	}
 
 	private compileFactory<T>(serviceKey: ServiceKey, options: ServiceOptions<T>): () => T | Promise<T> {
-		console.log('compileFactory', {serviceKey, options });
 		let type: 'class' | 'function';
 		let deps: string[];
 		const stringDef = options.service.toString();
