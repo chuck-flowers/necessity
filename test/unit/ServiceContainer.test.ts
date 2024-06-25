@@ -73,8 +73,7 @@ function createServiceContainer() {
 		logger: () => ({
 			log: test.mock.fn(),
 		} satisfies Logger),
-		repo: Repo
-	});
+	}).defineService('repo', Repo);
 }
 
 function createChildContainer(parent: ReturnType<typeof createServiceContainer>) {

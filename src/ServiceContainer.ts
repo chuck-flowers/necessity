@@ -13,13 +13,21 @@ export class ServiceContainer<
 		mapping: ContainerDefinition<Mapping>,
 		private readonly parent?: ServiceContainer<Record<string, unknown>>
 	) {
+		for (const [key, value] of Object.entries(mapping)) {
+			this.defineService(key, value);
+		}
+	}
+
+	defineService<K extends ServiceKey, S>(
+		serviceId: K,
+		serviceDefinition: ServiceDefinition<S>
+	): ServiceContainer<Mapping & { [T in K]: S }> {
 		type Key = keyof Mapping;
 
-		for (const [key, value] of Object.entries(mapping)) {
-			const serviceOptions = this.normalizeServiceDef(value as ServiceDefinition<Mapping[Key]>);
-			const factory = this.compileFactory(key, serviceOptions);
-			this.factoryLookup[key as Key] = factory as () => Promise<Mapping[Key]>;
-		}
+		const serviceOptions = this.normalizeServiceDef(serviceDefinition);
+		const factory = this.compileFactory(serviceId, serviceOptions);
+		this.factoryLookup[serviceId as Key] = factory as () => Promise<Mapping[Key]>;
+		return this as ServiceContainer<Mapping & { [T in K]: S }>;
 	}
 
 	async get<K extends keyof Mapping>(key: K): Promise<Mapping[K]> {
