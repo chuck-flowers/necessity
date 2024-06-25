@@ -1,0 +1,44 @@
+<html>
+
+<head>
+	<style>
+		table,
+		th,
+		td {
+			border: 1px solid black;
+		}
+	</style>
+</head>
+
+<body>
+	<form action="/" method="post">
+		<label for="firstName">First Name</label>
+		<input type="text" id="firstName" name="firstName">
+		<label for="lastName">Last Name</label>
+		<input type="text" id="lastName" name="lastName">
+		<label for="age">Age</label>
+		<input type="number" id="age" name="age">
+
+		<input type="submit" value="Submit">
+	</form>
+	<table>
+		<thead>
+			<tr>
+				<td>First Name</td>
+				<td>Last Name</td>
+				<td>Age</td>
+			</tr>
+		</thead>
+		<tbody>
+			{{#people}}
+			<tr>
+				<td>{{firstName}}</td>
+				<td>{{lastName}}</td>
+				<td>{{age}}</td>
+			</tr>
+			{{/people}}
+		</tbody>
+	</table>
+</body>
+
+</html>
