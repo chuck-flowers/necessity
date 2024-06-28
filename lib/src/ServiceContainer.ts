@@ -31,6 +31,23 @@ export class ServiceContainer<
 		return this as ServiceContainer<Mapping & { [T in K]: S }>;
 	}
 
+	refineService<K extends Extract<keyof Mapping, string>>(
+		serviceId: K,
+		refiner: (input: Mapping[K]) => Mapping[K]
+	): typeof this {
+		const parent = this.parent;
+		if (parent === undefined) {
+			throw new Error('Unable to refine a service in a container with no parent');
+		}
+
+		this.defineService(serviceId, async () => {
+			const parentInstance = await parent.get(serviceId) as Mapping[K];
+			return refiner(parentInstance);
+		});
+
+		return this;
+	}
+
 	check(): boolean {
 		const services = this.depGraph.allServices();
 		for (const s of services) {
