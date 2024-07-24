@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import test from 'node:test';
-import ServiceContainer from '../../src/ServiceContainer.js';
+import { ServiceContainer } from '../../src/ServiceContainer.js';
 
 class Cache {
 	private map = new Map<string, string>();
@@ -85,17 +85,13 @@ await test.describe('Check Tests', async () => {
 
 
 function createServiceContainer() {
-	return new ServiceContainer({
-		cache: Cache,
-		logger: () => ({
-			log: test.mock.fn(),
-		} satisfies Logger),
-	}).defineService('repo', Repo);
+	return new ServiceContainer()
+		.defineService('cache', Cache)
+		.defineService('logger', () => ({ log: test.mock.fn() } satisfies Logger))
+		.defineService('repo', Repo);
 }
 
 function createChildContainer(parent: ReturnType<typeof createServiceContainer>) {
-	return parent.child({
-		consoleLogger: () => console,
-	});
+	return parent.child().defineService('consoleLogger', () => console);
 }
 

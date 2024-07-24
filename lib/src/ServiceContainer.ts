@@ -11,11 +11,13 @@ export class ServiceContainer<
 	private readonly instanceLookup = {} as Partial<Mapping>;
 
 	constructor(
-		mapping: ContainerDefinition<Mapping>,
+		mapping?: ContainerDefinition<Mapping>,
 		private readonly parent?: ServiceContainer<Record<string, unknown>>
 	) {
-		for (const [key, value] of Object.entries(mapping)) {
-			this.defineService(key, value);
+		if (mapping !== undefined) {
+			for (const [key, value] of Object.entries(mapping)) {
+				this.defineService(key, value);
+			}
 		}
 	}
 
@@ -83,7 +85,7 @@ export class ServiceContainer<
 		return instance;
 	}
 
-	child<M extends ServiceMapping>(mapping: ContainerDefinition<M>): ServiceContainer<Mapping & M> {
+	child<M extends ServiceMapping>(mapping?: ContainerDefinition<M>): ServiceContainer<Mapping & M> {
 		return new ServiceContainer<Mapping & M>(
 			mapping as ContainerDefinition<M & Mapping>,
 			this as ServiceContainer<Record<string, unknown>>
